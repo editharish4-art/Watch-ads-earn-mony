@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Visit Tasks</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
+        /* बाहिरी स्क्रोल बन्द गर्न र भित्र मात्र स्क्रोल गर्न */
+        body { 
+            background: #f4f7f6; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 600px; 
+            margin: auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .header { 
+            background: #00b894; color: white; padding: 20px; 
+            text-align: center; border-radius: 15px; margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,184,148,0.3);
+            flex-shrink: 0; /* Header खुम्चिन नदिने */
+        }
+
+        /* --- TASK SCROLL AREA --- */
+        #websiteTasks {
+            flex-grow: 1;
+            overflow-y: auto; /* धेरै टास्क भएमा यहाँ स्क्रोल हुन्छ */
+            padding-right: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: #00b894 #f4f7f6;
+        }
+
+        /* Chrome, Safari को लागि स्क्रोलबार लुकाउने वा सानो बनाउने */
+        #websiteTasks::-webkit-scrollbar { width: 6px; }
+        #websiteTasks::-webkit-scrollbar-thumb { background: #00b894; border-radius: 10px; }
+
+        .web-card {
+            background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s;
+            border-top: 5px solid #00b894; position: relative;
+        }
+
+        .web-card.fade-out { transform: translateX(100px); opacity: 0; }
+
+        .web-info h3 { font-size: 18px; color: #2d3436; margin-bottom: 8px; }
+        .web-info p { font-size: 14px; color: #636e72; margin-bottom: 15px; line-height: 1.5; }
+        
+        .reward-tag { 
+            display: inline-block; background: #e1f5fe; color: #0288d1; 
+            padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; margin-bottom: 15px;
+        }
+
+        .action-area { display: flex; flex-direction: column; gap: 12px; }
+        
+        .visit-link { 
+            background: #f1f2f6; color: #00b894; text-align: center; 
+            padding: 12px; border-radius: 10px; text-decoration: none; 
+            font-weight: bold; border: 2px solid #00b894;
+        }
+
+        .submit-btn { 
+            background: #2d3436; color: white; border: none; padding: 12px; 
+            border-radius: 10px; font-weight: bold; cursor: pointer;
+        }
+
+        .upload-box { 
+            margin-top: 10px; padding: 15px; background: #f9f9f9; 
+            border: 2px dashed #ccc; border-radius: 10px; display: none;
+        }
+
+        .back-nav { margin-bottom: 10px; display: block; color: #00b894; text-decoration: none; font-weight: bold; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="index.html" class="back-nav">← Back to Menu</a>
+        
+        <div class="header">
+            <h2>Website Tasks</h2>
+            <p>Scroll down to see all tasks</p>
+        </div>
+
+        <div id="websiteTasks">
+            
+            <div class="web-card" id="task-web1">
+                <div class="web-info">
+                    <h3>🌐 News Portal Visit</h3>
+                    <p>यो समाचार पोर्टलमा जानुहोस् र १ मिनेट समाचार पढ्नुहोस्।</p>
+                </div>
+                <div class="reward-tag">💰 रू १५</div>
+                <div class="action-area">
+                    <a href="https://example.com" target="_blank" class="visit-link" onclick="enableUpload('web1')">Visit Website</a>
+                    <div class="upload-box" id="upload-web1">
+                        <input type="file" id="file-web1" accept="image/*">
+                    </div>
+                    <button class="submit-btn" onclick="submitWebTask('web1', 'News Visit')">Submit Task</button>
+                </div>
+            </div>
+
+            <div class="web-card" id="task-web2">
+                <div class="web-info">
+                    <h3>🛍️ Shop View</h3>
+                    <p>अनलाइन स्टोर हेर्नुहोस् र सामानको स्क्रिनसट लिनुहोस्।</p>
+                </div>
+                <div class="reward-tag">💰 रू २५</div>
+                <div class="action-area">
+                    <a href="https://example.com" target="_blank" class="visit-link" onclick="enableUpload('web2')">Visit Website</a>
+                    <div class="upload-box" id="upload-web2">
+                        <input type="file" id="file-web2" accept="image/*">
+                    </div>
+                    <button class="submit-btn" onclick="submitWebTask('web2', 'Shop View')">Submit Task</button>
+                </div>
+            </div>
+
+            <div class="web-card" id="task-web3">
+                <div class="web-info">
+                    <h3>📺 Video Site</h3>
+                    <p>भिडियो वेबसाइटमा गएर ३० सेकेन्ड भिडियो हेर्नुहोस्।</p>
+                </div>
+                <div class="reward-tag">💰 रू १०</div>
+                <div class="action-area">
+                    <a href="https://example.com" target="_blank" class="visit-link" onclick="enableUpload('web3')">Visit Website</a>
+                    <div class="upload-box" id="upload-web3">
+                        <input type="file" id="file-web3" accept="image/*">
+                    </div>
+                    <button class="submit-btn" onclick="submitWebTask('web3', 'Video View')">Submit Task</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function enableUpload(id) {
+            document.getElementById('upload-' + id).style.display = 'block';
+        }
+
+        function submitWebTask(id, taskName) {
+            const fileInput = document.getElementById('file-' + id);
+            const card = document.getElementById('task-' + id);
+
+            if (fileInput.files.length === 0) {
+                alert("कृपया पहिले स्क्रिनसट हाल्नुहोस्!");
+                return;
+            }
+
+            saveToPending(taskName);
+
+            card.classList.add('fade-out');
+            setTimeout(() => {
+                card.remove();
+                if (document.querySelectorAll('.web-card').length === 0) {
+                    document.getElementById('websiteTasks').innerHTML = "<p style='text-align:center;'>आजको सबै टास्क सकियो!</p>";
+                }
+            }, 300);
+        }
+
+        function saveToPending(name) {
+            let pending = JSON.parse(localStorage.getItem('pendingTasks')) || [];
+            pending.push({ title: name, type: 'Website', status: 'Pending', date: new Date().toLocaleString() });
+            localStorage.setItem('pendingTasks', JSON.stringify(pending));
+        }
+    </script>
+</body>
+</html>

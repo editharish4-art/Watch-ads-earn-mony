@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sukumaya TV - Multitask Admin</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #f0f2f5; padding: 20px; }
+        .admin-card { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; font-weight: 700; border-bottom: 2px solid #e8f0fe; padding-bottom: 10px; }
+        
+        .field { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e1e4e8; border-radius: 10px; transition: 0.3s; font-size: 14px; }
+        input:focus, select:focus { border-color: #1a73e8; outline: none; }
+        
+        .btn-upload { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-upload:hover { background: #1557b0; transform: translateY(-2px); }
+        
+        .task-icon { font-size: 20px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <h2>Sukumaya Admin</h2>
+
+    <div class="field">
+        <label>प्लेटफर्म छान्नुहोस् (Platform)</label>
+        <select id="platform">
+            <option value="facebook">🔵 Facebook Task</option>
+            <option value="youtube">🔴 YouTube Task</option>
+            <option value="tiktok">⚫ TikTok Task</option>
+            <option value="website">🌐 Website Task</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>टास्कको शीर्षक (Task Title)</label>
+        <input type="text" id="taskTitle" placeholder="उदा: Like this video">
+    </div>
+
+    <div class="field">
+        <label>लिङ्क हाल्नुहोस् (Video/Website URL)</label>
+        <input type="url" id="taskLink" placeholder="https://...">
+    </div>
+
+    <div class="field">
+        <label>रिवार्ड (रु. मा)</label>
+        <input type="number" id="taskReward" step="0.01" value="0.10">
+    </div>
+
+    <button class="btn-upload" onclick="saveTask()">टास्क पब्लिश गर्नुस्</button>
+</div>
+
+<script>
+    // Firebase Config (तपाईँकै पुरानो)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBiAxlvsjw5If-i9pjGYvhIiM9wgIIukII",
+        authDomain: "task-apps-5ebdc.firebaseapp.com",
+        databaseURL: "https://task-apps-5ebdc-default-rtdb.firebaseio.com",
+        projectId: "task-apps-5ebdc",
+        storageBucket: "task-apps-5ebdc.firebasestorage.app",
+        messagingSenderId: "1011417159330",
+        appId: "1:1011417159330:web:976cd4e433f480f0f469fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function saveTask() {
+        const platform = document.getElementById('platform').value;
+        const title = document.getElementById('taskTitle').value;
+        const link = document.getElementById('taskLink').value;
+        const reward = document.getElementById('taskReward').value;
+
+        if(!title || !link) {
+            Swal.fire("खाली छ!", "कृपया शीर्षक र लिङ्क अनिवार्य हाल्नुहोस्।", "warning");
+            return;
+        }
+
+        const taskObject = {
+            title: title,
+            link: link,
+            reward: parseFloat(reward),
+            platform: platform,
+            timestamp: Date.now()
+        };
+
+        // Platform अनुसार छुट्टाछुट्टै फोल्डरमा सेभ हुन्छ
+        db.ref('all_tasks/' + platform).push(taskObject)
+        .then(() => {
+            Swal.fire({
+                title: "सफल!",
+                text: platform.toUpperCase() + " टास्क थपियो।",
+                icon: "success",
+                confirmButtonColor: "#1a73e8"
+            });
+            // Form Clear
+            document.getElementById('taskTitle').value = "";
+            document.getElementById('taskLink').value = "";
+        })
+        .catch((err) => {
+            Swal.fire("Error", err.message, "error");
+        });
+    }
+</script>
+
+</body>
+</html>

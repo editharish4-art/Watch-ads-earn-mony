@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic TikTok Reels</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #000; height: 100vh; overflow: hidden; }
+
+        /* मुख्य एप कन्टेनर */
+        .video-app {
+            width: 100%;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory; /* स्क्रोल गर्दा अर्को भिडियोमा टक्क रोकिने */
+            scrollbar-width: none;
+        }
+        .video-app::-webkit-scrollbar { display: none; }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            scroll-snap-align: start;
+            background: #000;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* साइडबार आइकनहरू */
+        .side-bar {
+            position: absolute; right: 15px; bottom: 120px;
+            display: flex; flex-direction: column; gap: 20px;
+            color: white; z-index: 10; text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .icon-btn { font-size: 30px; cursor: pointer; text-align: center; }
+        .icon-btn p { font-size: 12px; font-weight: bold; }
+
+        /* भिडियोको विवरण */
+        .video-footer {
+            position: absolute; bottom: 30px; left: 15px;
+            color: white; z-index: 10; width: 75%;
+        }
+        .video-footer h3 { margin-bottom: 8px; font-size: 18px; color: #fff; }
+        .video-footer p { font-size: 14px; opacity: 0.9; }
+
+        .back-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 100;
+            color: white; text-decoration: none; font-size: 16px;
+            background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-btn">← Back</a>
+
+    <div class="video-app" id="videoApp">
+        </div>
+
+    <script>
+        // १. यहाँ तपाईँले जति पनि भिडियोहरू थप्न सक्नुहुन्छ
+        const videoData = [
+            { url: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-lighting-in-the-city-21817-large.mp4', user: '@kathmandu_vibe', desc: 'नेपाली सहरको रमाइलो साँझ! ✨ #nepal #night' },
+            { url: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-dancing-in-the-street-at-night-34448-large.mp4', user: '@dance_nepal', desc: 'Street dance energy! 🔥 #trending #dance' },
+            { url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-leaves-failing-down-42865-large.mp4', user: '@nature_lover', desc: 'प्रकृतिको सुन्दरता। 🍂 #peace #nature' },
+            { url: 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4', user: '@travel_nepal', desc: 'शान्त जलविहार। 🌊 #relax #water' },
+            { url: 'https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-out-of-focus-3134-large.mp4', user: '@sky_watcher', desc: 'तारा चम्केको रात। ✨ #stars #night' }
+        ];
+
+        const videoApp = document.getElementById('videoApp');
+
+        // २. भिडियोहरूलाई HTML मा बदल्ने
+        videoData.forEach((item, index) => {
+            const videoElement = `
+                <div class="video-container">
+                    <video loop onclick="playPause(this)" ${index === 0 ? 'autoplay muted' : ''}>
+                        <source src="${item.url}" type="video/mp4">
+                    </video>
+                    <div class="side-bar">
+                        <div class="icon-btn">❤️<p>125k</p></div>
+                        <div class="icon-btn">💬<p>1k</p></div>
+                        <div class="icon-btn">↪️<p>Share</p></div>
+                    </div>
+                    <div class="video-footer">
+                        <h3>${item.user}</h3>
+                        <p>${item.desc}</p>
+                    </div>
+                </div>`;
+            videoApp.innerHTML += videoElement;
+        });
+
+        // ३. Play/Pause फङ्सन
+        function playPause(video) {
+            video.paused ? video.play() : video.pause();
+        }
+
+        // ४. अटो-प्ले जब भिडियो स्क्रोल गरेर अगाडि आउँछ
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target.querySelector('video');
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+        }, { threshold: 0.8 });
+
+        document.querySelectorAll('.video-container').forEach(container => {
+            observer.observe(container);
+        });
+    </script>
+</body>
+</html>

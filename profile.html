@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #2c3e50; --gold: #f1c40f; --success: #27ae60; --danger: #e74c3c; --blue: #3498db; --white: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 90px; }
+        
+        .profile-header { background: linear-gradient(135deg, var(--primary), #456789); color: white; padding: 25px 15px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .user-img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); margin-bottom: 8px; object-fit: cover; background: white; }
+        .user-name { font-size: 1.2rem; font-weight: bold; margin: 5px 0; }
+        
+        /* Copy Feature Style */
+        .uid-text { 
+            font-size: 0.75rem; 
+            opacity: 0.9; 
+            background: rgba(255,255,255,0.15); 
+            padding: 5px 12px; 
+            border-radius: 15px; 
+            display: inline-block; 
+            border: 1px dashed var(--gold);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .uid-text:active { background: rgba(241, 196, 15, 0.3); transform: scale(0.95); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 25px; margin-top: -18px; }
+        .stat-card { background: var(--white); padding: 12px 10px; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; }
+        .stat-card i { color: var(--gold); font-size: 1.1rem; margin-bottom: 5px; }
+        .stat-val { display: block; font-weight: 700; font-size: 1rem; color: #333; }
+        .stat-label { font-size: 0.65rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .action-container { display: flex; justify-content: center; padding: 15px 25px 5px; }
+        .btn-main { width: 100%; max-width: 350px; padding: 12px; border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 0.95rem; }
+        .btn-withdraw { background: var(--blue); box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); }
+
+        .menu-list { background: var(--white); margin: 15px 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+        .menu-item { padding: 15px 18px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; color: #444; cursor: pointer; }
+        .menu-item i.left-icon { width: 25px; font-size: 1rem; color: var(--primary); }
+        .menu-item span { flex: 1; font-size: 0.9rem; font-weight: 500; }
+
+        .bottom-nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 380px; background: var(--primary); display: flex; justify-content: space-around; padding: 8px; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 1000; }
+        .nav-item { text-align: center; color: rgba(255,255,255,0.5); text-decoration: none; padding: 8px 15px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-item i { font-size: 1.1rem; }
+        .nav-item span { font-size: 0.65rem; font-weight: 600; }
+        .nav-item.active { color: var(--white); background: rgba(255,255,255,0.12); }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--white); width: 85%; max-width: 380px; padding: 20px; border-radius: 15px; text-align: center; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-header">
+        <div class="user-img-container">
+            <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=random" class="user-img">
+        </div>
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="uid-text" onclick="copyRefCode()" title="Tap to copy">
+            <i class="fas fa-copy"></i> Code: <span id="userRefCode">----</span>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <i class="fas fa-users-viewfinder"></i>
+            <span class="stat-val" id="totalRef">0</span>
+            <span class="stat-label">Referrals</span>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-wallet"></i>
+            <span class="stat-val" id="userBalance">रू 0</span>
+            <span class="stat-label">Balance</span>
+        </div>
+    </div>
+
+    <div class="action-container">
+        <button class="btn-main btn-withdraw" onclick="openModal('withdrawModal')">
+            <i class="fas fa-hand-holding-dollar"></i> WITHDRAW NOW
+        </button>
+    </div>
+
+    <div class="menu-list">
+        <div class="menu-item" onclick="openModal('editModal')">
+            <i class="fas fa-circle-user left-icon"></i>
+            <span>Edit Profile</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: #ccc;"></i>
+        </div>
+        <div class="menu-item" onclick="openModal('historyModal')">
+            <i class="fas fa-receipt left-icon"></i>
+            <span>History</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: #ccc;"></i>
+        </div>
+        <div class="menu-item" onclick="logoutUser()" style="color:var(--danger);">
+            <i class="fas fa-right-from-bracket left-icon" style="color:var(--danger);"></i>
+            <span style="font-weight: bold;">Logout Account</span>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-house-chimney"></i>
+            <span>Home</span>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <i class="fas fa-user-gear"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Update Name</h3>
+            <input type="text" id="editNameInput" placeholder="Enter Full Name">
+            <button class="btn-main" style="background:var(--success); width:100%;" onclick="updateName()">SAVE CHANGES</button>
+            <button class="btn-main" style="width:100%; background:#f0f0f0; color: #555; margin-top:10px;" onclick="closeModal('editModal')">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Withdraw Money</h3>
+            <select id="method"><option value="esewa">eSewa</option><option value="khalti">Khalti</option></select>
+            <input type="text" id="walletId" placeholder="Wallet ID / Number">
+            <input type="number" id="amount" placeholder="Min रू 100">
+            <button class="btn-main btn-withdraw" style="width:100%;" onclick="handleWithdraw()">SUBMIT REQUEST</button>
+            <button class="btn-main" style="width:100%; background:#f0f0f0; color: #555; margin-top:10px;" onclick="closeModal('withdrawModal')">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content" style="width: 90%; max-height: 70vh; overflow-y: auto;">
+            <h3 style="margin-top:0;">Transactions</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead style="background: #f8f9fa;">
+                    <tr><th style="padding: 8px; border-bottom: 1px solid #ddd;">Method</th><th style="padding: 8px; border-bottom: 1px solid #ddd;">Amt</th><th style="padding: 8px; border-bottom: 1px solid #ddd;">Status</th></tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr><td colspan="3" style="padding: 15px; color: #999;">No records</td></tr>
+                </tbody>
+            </table>
+            <button class="btn-main" style="width:100%; background:var(--primary); margin-top:15px;" onclick="closeModal('historyModal')">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBiAxlvsjw5If-i9pjGYvhIiM9wgIIukII",
+            authDomain: "task-apps-5ebdc.firebaseapp.com",
+            databaseURL: "https://task-apps-5ebdc-default-rtdb.firebaseio.com",
+            projectId: "task-apps-5ebdc",
+            storageBucket: "task-apps-5ebdc.firebasestorage.app",
+            messagingSenderId: "1011417159330",
+            appId: "1:1011417159330:web:976cd4e433f480f0f469fb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser) { window.location.href = "auth.html"; }
+
+        function loadData() {
+            db.ref('users/' + currentUser).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById('userName').innerText = data.name;
+                    const phoneStr = String(data.phone);
+                    const refCode = phoneStr.slice(-4);
+                    document.getElementById('userRefCode').innerText = refCode;
+                    
+                    document.getElementById('userBalance').innerText = "रू " + (data.balance || 0);
+                    document.getElementById('totalRef').innerText = data.referrals || 0;
+                    document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${data.name}&background=random&color=fff`;
+                }
+            });
+        }
+        loadData();
+
+        // New Copy Function
+        function copyRefCode() {
+            const code = document.getElementById('userRefCode').innerText;
+            if (code === "----") return;
+
+            navigator.clipboard.writeText(code).then(() => {
+                // Professional small toast message
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Referral Code Copied!'
+                });
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
+        function updateName() {
+            const newName = document.getElementById('editNameInput').value;
+            if (!newName) return Swal.fire("Error", "नाम हाल्नुहोस्", "error");
+            db.ref('users/' + currentUser).update({ name: newName }).then(() => {
+                closeModal('editModal');
+                Swal.fire("Success", "प्रोफाइल अपडेट भयो", "success");
+            });
+        }
+
+        function handleWithdraw() {
+            const amount = parseInt(document.getElementById('amount').value);
+            const method = document.getElementById('method').value;
+            const walletId = document.getElementById('walletId').value;
+
+            if (!amount || amount < 100) return Swal.fire("Error", "न्यूनतम १०० रू", "error");
+            if (!walletId) return Swal.fire("Error", "ID खाली छ", "error");
+
+            db.ref('users/' + currentUser).once('value', (snapshot) => {
+                const bal = snapshot.val().balance || 0;
+                if (bal < amount) {
+                    Swal.fire("Error", "ब्यालेन्स पुगेन", "error");
+                } else {
+                    const newBal = bal - amount;
+                    db.ref('users/' + currentUser).update({ balance: newBal });
+                    db.ref('withdrawals').push({
+                        phone: currentUser, amount: amount, method: method, walletId: walletId, status: 'Pending', date: new Date().toLocaleString()
+                    }).then(() => {
+                        closeModal('withdrawModal');
+                        Swal.fire("Success", "अनुरोध पठाइयो", "success");
+                    });
+                }
+            });
+        }
+
+        function logoutUser() {
+            Swal.fire({
+                title: 'Logout?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('currentUser');
+                    window.location.href = "auth.html";
+                }
+            });
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function(e) { if (e.target.className === 'modal') e.target.style.display = 'none'; }
+    </script>
+</body>
+</html>

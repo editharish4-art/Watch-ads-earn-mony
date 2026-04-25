@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch & Earn Ads</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #0f0f0f; color: white; padding: 15px; }
+
+        /* आकर्षक ब्यालेन्स कार्ड */
+        .balance-card {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000; padding: 25px; border-radius: 20px;
+            text-align: center; margin-bottom: 30px;
+            box-shadow: 0 15px 30px rgba(255, 165, 0, 0.3);
+        }
+        .balance-card h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-card .amount { font-size: 40px; font-weight: 900; }
+
+        .container { max-width: 500px; margin: auto; }
+
+        /* ठूलो विज्ञापन बक्स */
+        .ad-card-large {
+            background: #1a1a1a;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #333;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .ad-card-large:hover { border-color: #FFD700; }
+
+        .ad-card-large .icon-circle {
+            width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 15px; font-size: 30px;
+        }
+
+        .ad-card-large h3 { font-size: 22px; margin-bottom: 5px; }
+        .ad-card-large p { color: #888; font-size: 14px; margin-bottom: 20px; }
+        .reward-badge { color: #2ecc71; font-weight: bold; font-size: 18px; margin-bottom: 20px; display: block; }
+
+        /* ठूलो Watch Ad बटन */
+        .watch-btn {
+            background: #FFD700; color: #000; border: none;
+            width: 100%; padding: 18px; border-radius: 15px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s;
+        }
+
+        .watch-btn:active { transform: scale(0.95); }
+
+        /* Ad Modal Player */
+        .ad-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        .video-wrapper { width: 100%; height: 80%; position: relative; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        .timer-tag {
+            position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8);
+            color: #FFD700; padding: 10px 20px; border-radius: 50px; font-weight: bold;
+        }
+
+        .claim-btn {
+            display: none; position: absolute; bottom: 50px;
+            background: #2ecc71; color: white; border: none;
+            padding: 20px 50px; border-radius: 50px; font-size: 20px;
+            font-weight: bold; cursor: pointer; animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body onload="updateBalanceDisplay()">
+
+    <div class="container">
+        <div class="balance-card">
+            <h2>Current Earnings</h2>
+            <div class="amount">रू <span id="balance">0</span></div>
+        </div>
+
+        <div class="ad-card-large">
+            <div class="icon-circle">💎</div>
+            <h3>Premium Gold Ad</h3>
+            <p>यो विज्ञापन १५ सेकेन्ड हेर्नुहोस् र रिवार्ड पाउनुहोस्।</p>
+            <span class="reward-badge">+ रू २० Reward</span>
+            <button class="watch-btn" onclick="startAd('Gold Ad', 20, 15)">
+                <span>▶</span> Watch Ad Now
+            </button>
+        </div>
+
+        <div class="ad-card-large">
+            <div class="icon-circle">⚡</div>
+            <h3>Super Flash Ad</h3>
+            <p>छिटो हेर्नुहोस् र तुरुन्तै पैसा कमाउनुहोस्।</p>
+            <span class="reward-badge">+ रू १५ Reward</span>
+            <button class="watch-btn" onclick="startAd('Flash Ad', 15, 10)">
+                <span>▶</span> Watch Ad Now
+            </button>
+        </div>
+    </div>
+
+    <div id="adModal" class="ad-modal">
+        <div class="video-wrapper">
+            <div class="timer-tag" id="adTimer">15s</div>
+            <video id="adVideo" muted playsinline>
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-bright-neon-signs-flashing-at-night-21818-large.mp4" type="video/mp4">
+            </video>
+        </div>
+        <button id="claimBtn" class="claim-btn" onclick="finishAd()">CLAIM REWARD</button>
+    </div>
+
+    <script>
+        let currentReward = 0;
+        let currentAdTitle = "";
+
+        function updateBalanceDisplay() {
+            let balance = localStorage.getItem('userBalance') || 0;
+            document.getElementById('balance').innerText = balance;
+        }
+
+        function startAd(title, reward, seconds) {
+            currentReward = reward;
+            currentAdTitle = title;
+            
+            const modal = document.getElementById('adModal');
+            const video = document.getElementById('adVideo');
+            const timerTxt = document.getElementById('adTimer');
+            const claimBtn = document.getElementById('claimBtn');
+
+            modal.style.display = 'flex';
+            claimBtn.style.display = 'none';
+            
+            let timeLeft = seconds;
+            timerTxt.innerText = timeLeft + "s";
+            video.play();
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerTxt.innerText = timeLeft + "s";
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerTxt.innerText = "Ready!";
+                    claimBtn.style.display = 'block';
+                }
+            }, 1000);
+        }
+
+        function finishAd() {
+            let oldBalance = parseInt(localStorage.getItem('userBalance')) || 0;
+            localStorage.setItem('userBalance', oldBalance + currentReward);
+
+            updateBalanceDisplay();
+            document.getElementById('adModal').style.display = 'none';
+            document.getElementById('adVideo').pause();
+            
+            alert("सफलतापूर्वक रू " + currentReward + " थपियो!");
+        }
+    </script>
+</body>
+</html>

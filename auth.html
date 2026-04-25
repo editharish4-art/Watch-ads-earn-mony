@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earning App - Auth with 4-Digit Referral</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        html, body { height: 100%; overflow: hidden; }
+        body { background: linear-gradient(135deg, #00b894, #00cec9); display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-container { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 100%; max-width: 400px; padding: 30px; border-radius: 25px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); text-align: center; color: white; overflow-y: auto; max-height: 90vh; }
+        .auth-header h2 { font-size: 24px; margin-bottom: 5px; }
+        .auth-header p { font-size: 13px; margin-bottom: 20px; color: rgba(255, 255, 255, 0.8); }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: white; }
+        .input-group input { width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 10px; outline: none; color: white; font-size: 14px; }
+        .input-group input::placeholder { color: rgba(255,255,255,0.6); }
+        .auth-btn { width: 100%; padding: 14px; background: #ffffff; color: #00b894; border: none; border-radius: 10px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 5px; transition: 0.3s; }
+        .auth-btn:active { transform: scale(0.98); }
+        .switch-text { margin-top: 20px; font-size: 13px; color: rgba(255, 255, 255, 0.9); }
+        .switch-text b { color: #fff; cursor: pointer; text-decoration: underline; }
+        .hidden { display: none; }
+        .mini-popup { width: 250px !important; padding: 10px !important; border-radius: 15px !important; }
+        .mini-title { font-size: 14px !important; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div id="loginForm">
+            <div class="auth-header">
+                <h2>स्वागत छ! 👋</h2>
+                <p>आफ्नो खातामा लगइन गर्नुहोस्</p>
+            </div>
+            <div class="input-group">
+                <label>फोन नम्बर</label>
+                <input type="number" id="loginId" placeholder="मोबाइल नम्बर हाल्नुहोस्">
+            </div>
+            <div class="input-group">
+                <label>पासवर्ड</label>
+                <input type="password" id="loginPass" placeholder="पासवर्ड">
+            </div>
+            <button class="auth-btn" onclick="loginUser()">लगइन गर्नुहोस्</button>
+            <p class="switch-text">एकाउन्ट छैन? <b onclick="toggleForm()">नयाँ बनाउनुहोस्</b></p>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <div class="auth-header">
+                <h2>नयाँ एकाउन्ट 📝</h2>
+                <p>दर्ता गर्नुहोस् र कमाउनुहोस्</p>
+            </div>
+            <div class="input-group">
+                <label>पूरा नाम</label>
+                <input type="text" id="regName" placeholder="तपाईँको नाम">
+            </div>
+            <div class="input-group">
+                <label>फोन नम्बर</label>
+                <input type="number" id="regPhone" placeholder="मोबाइल नम्बर">
+            </div>
+            <div class="input-group">
+                <label>पासवर्ड</label>
+                <input type="password" id="regPass" placeholder="पासवर्ड">
+            </div>
+            <div class="input-group">
+                <label>Referral Code (अन्तिम ४ अंक)</label>
+                <input type="number" id="regRefer" placeholder="साथीको कोड (४ अंक)">
+            </div>
+            <button class="auth-btn" onclick="registerUser()">रजिस्टर गर्नुहोस्</button>
+            <p class="switch-text">एकाउन्ट छ? <b onclick="toggleForm()">लगइन गर्नुहोस्</b></p>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBiAxlvsjw5If-i9pjGYvhIiM9wgIIukII",
+            authDomain: "task-apps-5ebdc.firebaseapp.com",
+            databaseURL: "https://task-apps-5ebdc-default-rtdb.firebaseio.com", 
+            projectId: "task-apps-5ebdc",
+            storageBucket: "task-apps-5ebdc.firebasestorage.app",
+            messagingSenderId: "1011417159330",
+            appId: "1:1011417159330:web:976cd4e433f480f0f469fb"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function toggleForm() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('registerForm').classList.toggle('hidden');
+        }
+
+        function showMsg(msg, icon) {
+            Swal.fire({
+                title: msg, icon: icon, position: 'center', showConfirmButton: false, timer: 2000, width: '250px',
+                customClass: { popup: 'mini-popup', title: 'mini-title' }
+            });
+        }
+
+        function registerUser() {
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const pass = document.getElementById('regPass').value;
+            const refInput = document.getElementById('regRefer').value;
+
+            if(!name || !phone || !pass) { showMsg("सबै विवरण भर्नुहोस्!", "warning"); return; }
+            if(phone.length < 10) { showMsg("सही नम्बर हाल्नुहोस्!", "error"); return; }
+
+            db.ref('users/' + phone).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    showMsg("यो नम्बर पहिले नै छ!", "error");
+                } else {
+                    const userData = {
+                        name: name,
+                        phone: phone,
+                        password: pass,
+                        balance: 0,
+                        referrals: 0,
+                        dateJoined: new Date().toLocaleDateString()
+                    };
+
+                    // ४ अंकको रेफरल कोड लजिक
+                    if (refInput) {
+                        if (refInput.length !== 4) {
+                            showMsg("कोड ४ अंकको हुनुपर्छ!", "error");
+                            return;
+                        }
+
+                        db.ref('users').once('value', (usersSnapshot) => {
+                            let foundReferer = false;
+                            let refererPhone = "";
+
+                            usersSnapshot.forEach((child) => {
+                                let uPhone = String(child.key);
+                                // फोनको अन्तिम ४ अंक चेक गर्ने
+                                if (uPhone.endsWith(refInput)) {
+                                    foundReferer = true;
+                                    refererPhone = uPhone;
+                                }
+                            });
+
+                            if (foundReferer && refererPhone !== phone) {
+                                // बोनस दिने
+                                let refData = usersSnapshot.child(refererPhone).val();
+                                db.ref('users/' + refererPhone).update({
+                                    balance: (refData.balance || 0) + 5,
+                                    referrals: (refData.referrals || 0) + 1
+                                });
+                                saveUser(phone, userData);
+                            } else {
+                                showMsg("गलत रेफरल कोड!", "error");
+                            }
+                        });
+                    } else {
+                        // कोड नहाली रजिस्टर गर्दा
+                        saveUser(phone, userData);
+                    }
+                }
+            });
+        }
+
+        function saveUser(phone, data) {
+            db.ref('users/' + phone).set(data).then(() => {
+                showMsg("दर्ता सफल भयो!", "success");
+                setTimeout(toggleForm, 1500);
+            }).catch(() => showMsg("Error!", "error"));
+        }
+
+        function loginUser() {
+            const phone = document.getElementById('loginId').value;
+            const pass = document.getElementById('loginPass').value;
+            if(!phone || !pass) { showMsg("विवरण खाली छ!", "info"); return; }
+
+            db.ref('users/' + phone).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    if (snapshot.val().password === pass) {
+                        localStorage.setItem('currentUser', phone);
+                        showMsg("लगइन सफल!", "success");
+                        setTimeout(() => { window.location.href = "index.html"; }, 1500);
+                    } else {
+                        showMsg("पासवर्ड मिलेन!", "error");
+                    }
+                } else {
+                    showMsg("खाता भेटिएन!", "error");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

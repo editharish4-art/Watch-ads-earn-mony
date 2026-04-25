@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Tasks - Earn Rewards</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f0f2f5; padding: 15px; }
+
+        .header { 
+            background: #1877f2; color: white; padding: 40px 15px 30px;
+            text-align: center; border-radius: 0 0 25px 25px; 
+            margin: -15px -15px 25px -15px; position: relative;
+        }
+
+        /* --- ब्यालेन्स बक्स स्टाइल --- */
+        .balance-badge {
+            position: absolute;
+            top: 60px; /* टाइटलको तल राख्न */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 5px 15px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .coin-icon { background: #f1c40f; color: #000; width: 20px; height: 20px; border-radius: 50%; display: inline-block; line-height: 20px; font-size: 12px; }
+
+        .back-btn { position: absolute; top: 15px; left: 15px; color: white; text-decoration: none; font-weight: bold; font-size: 20px; }
+        .pending-nav-btn { position: absolute; top: 15px; right: 15px; background: #f1c40f; color: #2d3436; padding: 6px 12px; border-radius: 50px; text-decoration: none; font-size: 11px; font-weight: 800; }
+
+        .task-container { max-width: 600px; margin: auto; }
+        .task-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-left: 6px solid #1877f2; transition: 0.4s ease; position: relative; }
+        .task-card.fade-out { transform: scale(0.9); opacity: 0; pointer-events: none; }
+        .reward { font-weight: bold; color: #2ecc71; font-size: 16px; display: block; margin-top: 5px; }
+        .open-btn, .submit-btn { display: block; width: 100%; padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; text-decoration: none; margin-top: 10px; cursor: pointer; }
+        .open-btn { background: #e7f3ff; color: #1877f2; }
+        .submit-btn { background: #1877f2; color: white; border: none; display: none; }
+        .upload-section { margin-top: 15px; display: none; background: #f9fafb; padding: 15px; border-radius: 12px; border: 2px dashed #1877f2; }
+        .status-badge { position: absolute; top: 15px; right: 20px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
+        .reopen-link { display: none; text-align: center; font-size: 12px; color: #1877f2; margin-top: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="index.html" class="back-btn">←</a>
+        <a href="pending.html" class="pending-nav-btn">⏳ Pending</a>
+        <h2>Facebook Task Center</h2>
+        
+        <div class="balance-badge">
+            <span class="coin-icon">₨</span>
+            <span>ब्यालेन्स: रू <span id="headerBalance">0.00</span></span>
+        </div>
+    </div>
+
+    <div class="task-container" id="taskList">
+        <div class="task-card" id="task-1">
+            <span class="status-badge">Available</span>
+            <h3>Like and Follow Page</h3>
+            <span class="reward">💰 Reward: रू २०</span>
+            <div class="upload-section" id="upload-1">
+                <p style="font-size: 12px; margin-bottom: 8px;">📸 स्क्रिनसट अपलोड गर्नुहोस्:</p>
+                <input type="file" id="file-1" accept="image/*">
+            </div>
+            <a href="https://facebook.com" id="open-1" target="_blank" class="open-btn" onclick="activateUpload(1)">Open Task</a>
+            <button id="btn-1" class="submit-btn" onclick="submitTask(1, 'FB Like Page', 20)">Submit Task</button>
+            <p id="reopen-1" class="reopen-link" onclick="window.open('https://facebook.com')">फेरि खोल्नुहोस्</p>
+        </div>
+
+        <div class="task-card" id="task-2">
+            <span class="status-badge">Available</span>
+            <h3>Share Video (5 Groups)</h3>
+            <span class="reward">💰 Reward: रू ५०</span>
+            <div class="upload-section" id="upload-2">
+                <p style="font-size: 12px; margin-bottom: 8px;">📸 स्क्रिनसट अपलोड गर्नुहोस्:</p>
+                <input type="file" id="file-2" accept="image/*">
+            </div>
+            <a href="https://facebook.com" id="open-2" target="_blank" class="open-btn" onclick="activateUpload(2)">Open Task</a>
+            <button id="btn-2" class="submit-btn" onclick="submitTask(2, 'FB Group Share', 50)">Submit Task</button>
+            <p id="reopen-2" class="reopen-link" onclick="window.open('https://facebook.com')">फेरि खोल्नुहोस्</p>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBiAxlvsjw5If-i9pjGYvhIiM9wgIIukII",
+            authDomain: "task-apps-5ebdc.firebaseapp.com",
+            projectId: "task-apps-5ebdc",
+            storageBucket: "task-apps-5ebdc.firebasestorage.app",
+            messagingSenderId: "1011417159330",
+            appId: "1:1011417159330:web:976cd4e433f480f0f469fb"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const userId = "test_user_001";
+
+        // ब्यालेन्स रियल-टाइम अपडेट गर्ने फङ्सन
+        function syncHeaderBalance() {
+            db.ref('users/' + userId + '/balance').on('value', (snapshot) => {
+                const bal = snapshot.val() || 0;
+                document.getElementById('headerBalance').innerText = parseFloat(bal).toFixed(2);
+            });
+        }
+
+        function activateUpload(id) {
+            document.getElementById('open-' + id).style.display = 'none';
+            document.getElementById('upload-' + id).style.display = 'block';
+            document.getElementById('btn-' + id).style.display = 'block';
+            document.getElementById('reopen-' + id).style.display = 'block';
+        }
+
+        function submitTask(id, title, reward) {
+            const fileInput = document.getElementById('file-' + id);
+            if (fileInput.files.length === 0) {
+                alert("⚠️ कृपया स्क्रिनसट अपलोड गर्नुहोस्!");
+                return;
+            }
+
+            const card = document.getElementById('task-' + id);
+            const btn = document.getElementById('btn-' + id);
+            btn.innerText = "Submitting...";
+            btn.disabled = true;
+
+            const taskRef = db.ref('users/' + userId + '/tasks').push();
+            taskRef.set({
+                title: title,
+                reward: reward,
+                status: 'Pending',
+                date: new Date().toLocaleDateString(),
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                card.classList.add('fade-out');
+                setTimeout(() => {
+                    card.remove();
+                    checkIfAllDone();
+                }, 400);
+            }).catch(err => {
+                alert("Error: " + err.message);
+                btn.innerText = "Submit Task";
+                btn.disabled = false;
+            });
+        }
+
+        function checkIfAllDone() {
+            const container = document.getElementById('taskList');
+            if (container.querySelectorAll('.task-card').length === 0) {
+                container.innerHTML = "<div style='text-align:center; padding:40px; color:#636e72;'><h3>आजको फेसबुक टास्क सकियो! 🎉</h3></div>";
+            }
+        }
+
+        // पेज लोड हुँदा ब्यालेन्स सिङ्क गर्ने
+        window.onload = syncHeaderBalance;
+    </script>
+</body>
+</html>
