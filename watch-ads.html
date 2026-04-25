@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>100 Unity Ads System</title>
+    <title>Sukumaya TV - Task Zone</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: #0a0a0a; color: white; padding: 15px; text-align: center; }
+        body { background: #0f0f0f; color: white; padding: 15px; text-align: center; }
 
         .balance-card {
             background: linear-gradient(135deg, #f1c40f, #f39c12);
             color: #000; padding: 20px; border-radius: 15px; margin-bottom: 25px;
             position: sticky; top: 10px; z-index: 100; box-shadow: 0 8px 15px rgba(0,0,0,0.5);
         }
-        .amount { font-size: 30px; font-weight: 900; }
+        .amount { font-size: 32px; font-weight: 900; }
 
         .task-grid {
             display: grid;
@@ -27,8 +27,8 @@
         }
 
         .task-box {
-            background: #161616;
-            border: 1px solid #333;
+            background: #1a1a1a;
+            border: 2px solid #333;
             padding: 25px 10px;
             border-radius: 12px;
             cursor: pointer;
@@ -36,23 +36,23 @@
             position: relative;
         }
 
-        .task-box:active { transform: scale(0.96); background: #222; }
-        .task-box.completed { pointer-events: none; border-color: #2ecc71; opacity: 0.6; }
+        .task-box:active { transform: scale(0.95); }
+        .task-box.completed { pointer-events: none; border-color: #2ecc71; opacity: 0.5; }
         
-        .task-box h3 { font-size: 15px; color: #f1c40f; margin-bottom: 5px; }
-        .task-box p { font-size: 11px; color: #2ecc71; }
+        .task-box h3 { font-size: 16px; color: #f1c40f; }
+        .task-box p { font-size: 12px; color: #2ecc71; font-weight: bold; }
 
         .done-label {
-            position: absolute; top: 5px; right: 5px;
-            background: #2ecc71; color: white; font-size: 10px;
-            padding: 2px 6px; border-radius: 5px;
+            position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+            display: flex; align-items: center; justify-content: center;
+            color: #2ecc71; font-weight: bold; border-radius: 12px;
         }
     </style>
 </head>
 <body>
 
     <div class="balance-card">
-        <p>तपाईँको आम्दानी</p>
+        <p>तपाईँको कुल ब्यालेन्स</p>
         <div class="amount">रू <span id="balance">0.00</span></div>
     </div>
 
@@ -70,7 +70,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const currentUser = localStorage.getItem('currentUser') || "guest_user";
+        const currentUser = localStorage.getItem('currentUser') || "user_" + Math.floor(Math.random() * 1000);
 
         let currentBoxId = null;
 
@@ -81,7 +81,7 @@
             box.className = 'task-box';
             box.id = 'box-' + i;
             box.onclick = () => handleAdClick(i);
-            box.innerHTML = `<h3>टास्क ${i}</h3><p>Reward: रू ०.१०</p>`;
+            box.innerHTML = `<h3>टास्क ${i}</h3><p>रू ०.१०</p>`;
             grid.appendChild(box);
         }
 
@@ -91,35 +91,44 @@
             });
         }
 
-        // बाकस क्लिक गर्दा विज्ञापन चलाउने
         function handleAdClick(id) {
             currentBoxId = id;
 
+            // AppCreator24 विज्ञापन लोड हुन समय लाग्ने भएकोले 'Loading' देखाउने
+            Swal.fire({
+                title: 'विज्ञापन लोड हुँदैछ...',
+                text: 'कृपया केही सेकेन्ड पर्खनुहोस्',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
             if (typeof AppCreator24 !== 'undefined') {
-                // १. विज्ञापन देखाउने कमाण्ड
+                // विज्ञापन देखाउने प्रयास
                 AppCreator24.showInterstitial();
                 
-                // २. पैसा थप्ने लोजिक (यसलाई विज्ञापन सकिएपछि चल्ने गरी AppCreator24 को सेटिङमा पनि मिलाउन सकिन्छ)
-                // तर तत्कालको लागि क्लिकमा रिवार्ड दिने गरी यहाँ राखिएको छ:
-                addMoney();
+                // विज्ञापन लोड हुन २-३ सेकेन्ड लाग्न सक्छ, त्यसैले अलि ढिलो रिवार्ड दिने
+                setTimeout(() => {
+                    Swal.close();
+                    addMoney();
+                }, 3000); 
             } else {
-                Swal.fire("सूचना", "यो विज्ञापन केवल मोबाइल एप भित्र मात्र चल्छ।", "warning");
+                Swal.fire("Error", "यो सिस्टम मोबाइल एपमा मात्र चल्छ!", "error");
             }
         }
 
         function addMoney() {
             db.ref('users/' + currentUser + '/balance').transaction(c => (c || 0) + 0.10)
             .then(() => {
-                if(currentBoxId) {
-                    const target = document.getElementById('box-' + currentBoxId);
+                const target = document.getElementById('box-' + currentBoxId);
+                if(target) {
                     target.classList.add('completed');
                     target.innerHTML += '<div class="done-label">सफल ✅</div>';
                 }
                 Swal.fire({
                     icon: 'success',
                     title: 'बधाई छ!',
-                    text: 'तपाईँले रू ०.१० पाउनुभयो',
-                    timer: 1500,
+                    text: 'तपाईँले रिवार्ड प्राप्त गर्नुभयो',
+                    timer: 2000,
                     showConfirmButton: false
                 });
             });
